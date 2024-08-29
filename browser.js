@@ -12,6 +12,7 @@ const startBrowser = async () => {
   } catch (error) {
     console.log("Không tạo được browser " + error);
   }
+  return browser;
 };
 
 module.exports = startBrowser;
