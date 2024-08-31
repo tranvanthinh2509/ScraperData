@@ -7,7 +7,7 @@ const startBrowser = async () => {
     browser = await puppeteer.launch({
       headless: true,
       args: ["--disable-setuid-sandbox"],
-      ignoreDefaultArgs: true,
+      ignoreHTTPSErrors: true,
     });
   } catch (error) {
     console.log("Không tạo được browser " + error);

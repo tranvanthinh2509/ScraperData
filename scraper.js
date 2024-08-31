@@ -77,7 +77,7 @@ const scraper = async (browser, url) =>
                 images = els.map((el) => {
                   return el.querySelector("img")?.src;
                 });
-                return images;
+                return images.filter((i) => !i === false);
               }
             );
 
@@ -91,7 +91,7 @@ const scraper = async (browser, url) =>
                   title: el.querySelector("h1 > a").innerText,
                   star: el
                     .querySelector("h1 > span")
-                    .className.replace(/^\D+/g, ""),
+                    ?.className?.replace(/^\D+/g, ""),
                   // class: {
                   //   content: el.querySelector("p").innerText,
                   //   classType: el.querySelector("p > a > strong").innerText,
@@ -115,22 +115,84 @@ const scraper = async (browser, url) =>
               }
             );
 
-            console.log(header);
+            detailData.header = header;
+
+            //Thông tin mô tả
+            const mainContentHeader = await pageDetail.$eval(
+              "#left-col > article.the-post > section.post-main-content",
+              (el) => el.querySelector("div.section-header").innerText
+            );
+
+            const mainContentContent = await pageDetail.$$eval(
+              "#left-col > article.the-post > section.post-main-content > div.section-content > p",
+              (els) => (mainContenContent = els.map((el) => el.innerText))
+            );
+
+            detailData.mainContent = {
+              header: mainContentHeader,
+              content: mainContentContent,
+            };
+
+            //Đặc điểm tin đăng
+            const overviewHeader = await pageDetail.$eval(
+              "#left-col > article.the-post > section.post-overview",
+              (el) => el.querySelector("div.section-header").innerText
+            );
+
+            const overviewContent = await pageDetail.$$eval(
+              "#left-col > article.the-post > section.post-overview > div.section-content > table.table > tbody > tr",
+              (els) =>
+                (overviewContent = els.map((el) => ({
+                  name: el.querySelector("td:first-child").innerText,
+                  content: el.querySelector("td:last-child").innerText,
+                })))
+            );
+
+            detailData.overview = {
+              header: overviewHeader,
+              content: overviewContent,
+            };
+
+            // Lấy thông tin liên hệ
+
+            const contactHeader = await pageDetail.$eval(
+              "#left-col > article.the-post > section.post-contact",
+              (el) => el.querySelector("div.section-header").innerText
+            );
+
+            const contactContent = await pageDetail.$$eval(
+              "#left-col > article.the-post > section.post-contact > div.section-content > table.table > tbody > tr",
+              (els) =>
+                (overviewContent = els.map((el) => ({
+                  name: el.querySelector("td:first-child").innerText,
+                  content: el.querySelector("td:last-child").innerText,
+                })))
+            );
+
+            detailData.contact = {
+              header: contactHeader,
+              content: contactContent,
+            };
             await pageDetail.close();
             console.log("Đã đóng tab " + link);
-            resolve();
+            resolve(detailData);
           } catch (error) {
             console.log("Lấy data detail lỗi " + error);
             reject(error);
           }
         });
+
+      const details = [];
       for (let link of detailLinks) {
-        await scrapperDetail(link);
+        const detail = await scrapperDetail(link);
+        details.push(detail);
       }
+
+      scrapeData.body = details;
 
       await browser.close();
       console.log("Trình duyệt đã đóng");
-      resolve();
+      resolve(scrapeData);
     } catch (error) {
       reject(error);
     }
